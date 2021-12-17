@@ -5,24 +5,42 @@ if __name__ == '__main__':
     with open('data/day15.txt', 'r') as f:
         lines = f.readlines()
 
-    field = np.zeros((len(lines), len(lines[0]) - 1), dtype=int)
-    visit = np.zeros(field.shape, dtype=int)
-    dist = np.ones(field.shape, dtype=int) * 99999
+    orig_field = np.zeros((len(lines), len(lines[0]) - 1), dtype=int)
+    field = orig_field
 
     for i, line in enumerate(lines):
         for j, risk in enumerate(line.strip()):
             field[i, j] = risk
 
+    new_field = orig_field 
+    for i in range(4):
+        field = np.concatenate((field, new_field + i + 1), axis=1)
+
+    new_field = field
+    for i in range(4):
+        field = np.concatenate((field, new_field + i + 1), axis=0)
+
+    fix_coords = np.transpose((field > 9).nonzero())
+    for coord in fix_coords:
+        coord = tuple(coord)
+        field[coord] = field[coord] % 9
+
+
+    visit = np.zeros(field.shape, dtype=int)
+    dist = np.ones(field.shape, dtype=int) * 99999
 
     entry = (0, 0)
-    exit = (len(lines) - 1, len(lines[0]) - 2)
+    exit = (field.shape[0] - 1, field.shape[1] - 1)
 
     dist[entry] = 0
+    visit[entry] = 1
 
     shortest_path_set = {entry}
     visited_nodes = {entry}
 
     spot = entry
+    perc_done = 0
+
     while exit not in visited_nodes:
 
         # Determine adjacent neighbors
@@ -37,8 +55,7 @@ if __name__ == '__main__':
         for neighbor in neighbors:
             
             if  0 <= neighbor[0] < field.shape[0] \
-            and 0 <= neighbor[1] < field.shape[1] \
-            and neighbor not in shortest_path_set:
+            and 0 <= neighbor[1] < field.shape[1]:
                 dist[neighbor] = min(dist[neighbor], dist[spot] + field[neighbor])
                 visited_nodes.add(neighbor)
                 visit[neighbor] = 1
